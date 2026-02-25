@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>せどりプロ - 利益計算シミュレーター</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+</head>
+<body>
+  <div id="app">
+    <!-- ヘッダー -->
+    <header class="app-header">
+      <div class="header-left">
+        <h1 class="app-title">せどりプロ</h1>
+        <span class="app-subtitle">利益計算シミュレーター</span>
+      </div>
+      <div class="header-right">
+        <button id="darkModeToggle" class="icon-btn" title="テーマ切替">
+          <span class="icon-sun">☀️</span>
+          <span class="icon-moon">🌙</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ナビゲーション -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-page="calculator">
+        <span class="nav-icon">🧮</span>
+        <span class="nav-label">計算</span>
+      </button>
+      <button class="nav-btn" data-page="compare">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">比較</span>
+      </button>
+      <button class="nav-btn" data-page="products">
+        <span class="nav-icon">📦</span>
+        <span class="nav-label">商品</span>
+      </button>
+      <button class="nav-btn" data-page="dashboard">
+        <span class="nav-icon">📈</span>
+        <span class="nav-label">収支</span>
+      </button>
+      <button class="nav-btn" data-page="settings">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">設定</span>
+      </button>
+    </nav>
+
+    <!-- ========== 利益計算ページ ========== -->
+    <main id="page-calculator" class="page active">
+      <div class="page-content">
+        <section class="card">
+          <h2 class="card-title">クイック利益計算</h2>
+
+          <div class="form-group">
+            <label>商品名（メモ）</label>
+            <input type="text" id="calc-product-name" placeholder="例: Nintendo Switch" class="input">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>仕入れ先</label>
+              <select id="calc-source" class="input">
+                <option value="amazon">Amazon</option>
+                <option value="mercari">メルカリ</option>
+                <option value="yahoo_auction">ヤフオク</option>
+                <option value="rakuten">楽天市場</option>
+                <option value="store">実店舗</option>
+                <option value="other">その他</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label>仕入れ価格</label>
+              <div class="input-with-unit">
+                <input type="number" id="calc-purchase-price" placeholder="0" class="input" inputmode="numeric">
+                <span class="unit">円</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>販売先</label>
+              <select id="calc-platform" class="input">
+                <option value="mercari">メルカリ</option>
+                <option value="amazon">Amazon</option>
+                <option value="yahoo">ヤフオク</option>
+                <option value="rakuma">ラクマ</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label>販売予定価格</label>
+              <div class="input-with-unit">
+                <input type="number" id="calc-sale-price" placeholder="0" class="input" inputmode="numeric">
+                <span class="unit">円</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Amazon用オプション -->
+          <div id="amazon-options" class="sub-options hidden">
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label>カテゴリー</label>
+                <select id="calc-amazon-category" class="input"></select>
+              </div>
+              <div class="form-group flex-1">
+                <label>FBA利用</label>
+                <select id="calc-use-fba" class="input">
+                  <option value="0">自己発送</option>
+                  <option value="1">FBA利用</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- メルカリ用オプション -->
+          <div id="mercari-options" class="sub-options">
+            <div class="form-group">
+              <label>配送方法</label>
+              <select id="calc-mercari-shipping" class="input"></select>
+            </div>
+          </div>
+
+          <!-- ヤフオク用オプション -->
+          <div id="yahoo-options" class="sub-options hidden">
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label>プレミアム会員</label>
+                <select id="calc-yahoo-premium" class="input">
+                  <option value="1">会員 (8.8%)</option>
+                  <option value="0">非会員 (10%)</option>
+                </select>
+              </div>
+              <div class="form-group flex-1">
+                <label>送料負担</label>
+                <select id="calc-yahoo-shipping-type" class="input">
+                  <option value="seller">出品者負担</option>
+                  <option value="buyer">落札者負担</option>
+                </select>
+              </div>
+            </div>
+            <div id="yahoo-shipping-input" class="form-group">
+              <label>送料</label>
+              <div class="input-with-unit">
+                <input type="number" id="calc-yahoo-shipping" placeholder="0" class="input" inputmode="numeric">
+                <span class="unit">円</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ラクマ用オプション -->
+          <div id="rakuma-options" class="sub-options hidden">
+            <div class="form-group">
+              <label>送料</label>
+              <div class="input-with-unit">
+                <input type="number" id="calc-rakuma-shipping" placeholder="0" class="input" inputmode="numeric">
+                <span class="unit">円</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>ポイント還元</label>
+              <div class="input-with-unit">
+                <input type="number" id="calc-points-back" placeholder="0" class="input" inputmode="numeric" value="0">
+                <span class="unit">円</span>
+              </div>
+            </div>
+            <div class="form-group flex-1">
+              <label>梱包資材費</label>
+              <div class="input-with-unit">
+                <input type="number" id="calc-packaging" placeholder="30" class="input" inputmode="numeric" value="30">
+                <span class="unit">円</span>
+              </div>
+            </div>
+          </div>
+
+          <button id="calc-btn" class="btn btn-primary btn-full">利益を計算する</button>
+        </section>
+
+        <!-- 計算結果 -->
+        <section id="calc-result" class="card result-card hidden">
+          <h2 class="card-title">計算結果</h2>
+          <div id="calc-result-content"></div>
+          <div class="result-actions">
+            <button id="save-to-products" class="btn btn-secondary">商品リストに保存</button>
+            <button id="compare-all-btn" class="btn btn-outline">全販路比較へ</button>
+          </div>
+        </section>
+
+        <!-- 逆算ツール -->
+        <section class="card">
+          <h2 class="card-title">目標利益率からの逆算</h2>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>仕入れ価格</label>
+              <div class="input-with-unit">
+                <input type="number" id="reverse-purchase" placeholder="0" class="input" inputmode="numeric">
+                <span class="unit">円</span>
+              </div>
+            </div>
+            <div class="form-group flex-1">
+              <label>目標利益率</label>
+              <div class="input-with-unit">
+                <input type="number" id="reverse-rate" placeholder="20" class="input" inputmode="numeric" value="20">
+                <span class="unit">%</span>
+              </div>
+            </div>
+          </div>
+          <button id="reverse-calc-btn" class="btn btn-accent btn-full">最低販売価格を算出</button>
+          <div id="reverse-result" class="hidden"></div>
+        </section>
+      </div>
+    </main>
+
+    <!-- ========== 全販路比較ページ ========== -->
+    <main id="page-compare" class="page">
+      <div class="page-content">
+        <section class="card">
+          <h2 class="card-title">全販路一括比較</h2>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>仕入れ価格</label>
+              <div class="input-with-unit">
+                <input type="number" id="cmp-purchase" placeholder="0" class="input" inputmode="numeric">
+                <span class="unit">円</span>
+              </div>
+            </div>
+            <div class="form-group flex-1">
+              <label>販売価格</label>
+              <div class="input-with-unit">
+                <input type="number" id="cmp-sale" placeholder="0" class="input" inputmode="numeric">
+                <span class="unit">円</span>
+              </div>
+            </div>
+          </div>
+          <button id="cmp-btn" class="btn btn-primary btn-full">全販路で比較</button>
+        </section>
+
+        <section id="cmp-result" class="hidden">
+          <div id="cmp-result-content"></div>
+        </section>
+      </div>
+    </main>
+
+    <!-- ========== 商品リストページ ========== -->
+    <main id="page-products" class="page">
+      <div class="page-content">
+        <div class="page-header-row">
+          <h2 class="page-title">商品リスト</h2>
+          <button id="add-product-btn" class="btn btn-primary btn-sm">+ 追加</button>
+        </div>
+
+        <!-- フィルター -->
+        <div class="filter-bar">
+          <button class="filter-btn active" data-filter="all">すべて</button>
+          <button class="filter-btn" data-filter="research">リサーチ</button>
+          <button class="filter-btn" data-filter="purchased">仕入済</button>
+          <button class="filter-btn" data-filter="listed">出品中</button>
+          <button class="filter-btn" data-filter="sold">売却済</button>
+        </div>
+
+        <div id="product-list" class="product-list">
+          <div class="empty-state">
+            <span class="empty-icon">📦</span>
+            <p>商品がまだありません</p>
+            <p class="text-muted">「+ 追加」ボタンまたは計算結果から保存できます</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ========== ダッシュボードページ ========== -->
+    <main id="page-dashboard" class="page">
+      <div class="page-content">
+        <h2 class="page-title">収支ダッシュボード</h2>
+
+        <div class="stats-grid">
+          <div class="stat-card stat-profit">
+            <span class="stat-label">総利益</span>
+            <span id="stat-total-profit" class="stat-value">¥0</span>
+          </div>
+          <div class="stat-card stat-revenue">
+            <span class="stat-label">総売上</span>
+            <span id="stat-total-revenue" class="stat-value">¥0</span>
+          </div>
+          <div class="stat-card stat-investment">
+            <span class="stat-label">総仕入額</span>
+            <span id="stat-total-investment" class="stat-value">¥0</span>
+          </div>
+          <div class="stat-card stat-roi">
+            <span class="stat-label">ROI</span>
+            <span id="stat-roi" class="stat-value">0%</span>
+          </div>
+        </div>
+
+        <div class="stats-grid stats-grid-3">
+          <div class="stat-card-sm">
+            <span class="stat-label">在庫数</span>
+            <span id="stat-in-stock" class="stat-value-sm">0</span>
+          </div>
+          <div class="stat-card-sm">
+            <span class="stat-label">売却済</span>
+            <span id="stat-sold" class="stat-value-sm">0</span>
+          </div>
+          <div class="stat-card-sm">
+            <span class="stat-label">リサーチ中</span>
+            <span id="stat-research" class="stat-value-sm">0</span>
+          </div>
+        </div>
+
+        <section class="card">
+          <h2 class="card-title">利益率</h2>
+          <div class="profit-rate-bar-container">
+            <div class="profit-rate-bar">
+              <div id="profit-rate-fill" class="profit-rate-fill" style="width: 0%"></div>
+            </div>
+            <span id="profit-rate-text" class="profit-rate-text">0%</span>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card-title">最近の売却</h2>
+          <div id="recent-sales" class="recent-list">
+            <p class="text-muted text-center">売却済の商品はありません</p>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- ========== 設定ページ ========== -->
+    <main id="page-settings" class="page">
+      <div class="page-content">
+        <h2 class="page-title">設定</h2>
+
+        <section class="card">
+          <h3 class="card-subtitle">Amazon設定</h3>
+          <div class="form-group">
+            <label>出品形態</label>
+            <select id="set-amazon-seller" class="input">
+              <option value="professional">大口出品 (月額4,900円)</option>
+              <option value="individual">小口出品 (1商品100円)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>デフォルトカテゴリー</label>
+            <select id="set-amazon-category" class="input"></select>
+          </div>
+          <div class="form-group">
+            <label>FBA利用</label>
+            <select id="set-use-fba" class="input">
+              <option value="0">自己発送</option>
+              <option value="1">FBA利用</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>月間販売数（大口按分用）</label>
+            <div class="input-with-unit">
+              <input type="number" id="set-monthly-volume" class="input" value="30" inputmode="numeric">
+              <span class="unit">個</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 class="card-subtitle">ヤフオク設定</h3>
+          <div class="form-group">
+            <label>Yahoo!プレミアム会員</label>
+            <select id="set-yahoo-premium" class="input">
+              <option value="1">会員 (手数料8.8%)</option>
+              <option value="0">非会員 (手数料10%)</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 class="card-subtitle">メルカリ設定</h3>
+          <div class="form-group">
+            <label>デフォルト配送方法</label>
+            <select id="set-mercari-shipping" class="input"></select>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 class="card-subtitle">共通設定</h3>
+          <div class="form-group">
+            <label>デフォルト梱包資材費</label>
+            <div class="input-with-unit">
+              <input type="number" id="set-packaging" class="input" value="30" inputmode="numeric">
+              <span class="unit">円</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>目標利益率</label>
+            <div class="input-with-unit">
+              <input type="number" id="set-target-rate" class="input" value="20" inputmode="numeric">
+              <span class="unit">%</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 class="card-subtitle">データ管理</h3>
+          <div class="btn-row">
+            <button id="export-btn" class="btn btn-secondary flex-1">データ書出し</button>
+            <button id="import-btn" class="btn btn-outline flex-1">データ読込み</button>
+          </div>
+          <input type="file" id="import-file" accept=".json" class="hidden">
+          <button id="clear-data-btn" class="btn btn-danger btn-full" style="margin-top:8px">全データ削除</button>
+        </section>
+
+        <section class="card">
+          <h3 class="card-subtitle">手数料一覧（参考）</h3>
+          <div class="fee-reference">
+            <table class="fee-table">
+              <thead>
+                <tr><th>販路</th><th>手数料率</th><th>備考</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Amazon</td><td>8〜15%</td><td>カテゴリーにより変動 + 成約料</td></tr>
+                <tr><td>メルカリ</td><td>10%</td><td>送料は出品者負担が一般的</td></tr>
+                <tr><td>ヤフオク</td><td>8.8〜10%</td><td>プレミアム会員で8.8%</td></tr>
+                <tr><td>ラクマ</td><td>6%</td><td>最も手数料が安い</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- ========== 商品追加/編集モーダル ========== -->
+    <div id="product-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modal-title">商品を追加</h3>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>商品名</label>
+            <input type="text" id="modal-name" class="input" placeholder="商品名を入力">
+          </div>
+          <div class="form-group">
+            <label>ステータス</label>
+            <select id="modal-status" class="input">
+              <option value="research">リサーチ中</option>
+              <option value="purchased">仕入済</option>
+              <option value="listed">出品中</option>
+              <option value="sold">売却済</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>仕入れ先</label>
+              <select id="modal-source" class="input">
+                <option value="amazon">Amazon</option>
+                <option value="mercari">メルカリ</option>
+                <option value="yahoo_auction">ヤフオク</option>
+                <option value="rakuten">楽天市場</option>
+                <option value="store">実店舗</option>
+                <option value="other">その他</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label>仕入れ価格</label>
+              <div class="input-with-unit">
+                <input type="number" id="modal-purchase" class="input" inputmode="numeric" placeholder="0">
+                <span class="unit">円</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>販売先</label>
+              <select id="modal-platform" class="input">
+                <option value="mercari">メルカリ</option>
+                <option value="amazon">Amazon</option>
+                <option value="yahoo">ヤフオク</option>
+                <option value="rakuma">ラクマ</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label>販売(予定)価格</label>
+              <div class="input-with-unit">
+                <input type="number" id="modal-sale" class="input" inputmode="numeric" placeholder="0">
+                <span class="unit">円</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 売却済の場合 -->
+          <div id="modal-sold-section" class="hidden">
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label>実際の販売価格</label>
+                <div class="input-with-unit">
+                  <input type="number" id="modal-actual-sale" class="input" inputmode="numeric" placeholder="0">
+                  <span class="unit">円</span>
+                </div>
+              </div>
+              <div class="form-group flex-1">
+                <label>実際の手数料+送料</label>
+                <div class="input-with-unit">
+                  <input type="number" id="modal-actual-fees" class="input" inputmode="numeric" placeholder="0">
+                  <span class="unit">円</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>メモ</label>
+            <textarea id="modal-memo" class="input textarea" rows="2" placeholder="メモ（任意）"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="modal-cancel" class="btn btn-outline">キャンセル</button>
+          <button id="modal-save" class="btn btn-primary">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 確認ダイアログ -->
+    <div id="confirm-dialog" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content modal-sm">
+        <div class="modal-body">
+          <p id="confirm-message">本当に削除しますか？</p>
+        </div>
+        <div class="modal-footer">
+          <button id="confirm-no" class="btn btn-outline">キャンセル</button>
+          <button id="confirm-yes" class="btn btn-danger">削除</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="js/platforms.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
