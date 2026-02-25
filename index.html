@@ -25,13 +25,13 @@
 
     <!-- ナビゲーション -->
     <nav class="bottom-nav">
-      <button class="nav-btn active" data-page="calculator">
+      <button class="nav-btn active" data-page="research">
+        <span class="nav-icon">🔍</span>
+        <span class="nav-label">リサーチ</span>
+      </button>
+      <button class="nav-btn" data-page="calculator">
         <span class="nav-icon">🧮</span>
         <span class="nav-label">計算</span>
-      </button>
-      <button class="nav-btn" data-page="compare">
-        <span class="nav-icon">📊</span>
-        <span class="nav-label">比較</span>
       </button>
       <button class="nav-btn" data-page="products">
         <span class="nav-icon">📦</span>
@@ -47,8 +47,141 @@
       </button>
     </nav>
 
+    <!-- ========== リサーチページ ========== -->
+    <main id="page-research" class="page active">
+      <div class="page-content">
+
+        <!-- 商品クイックリサーチ -->
+        <section class="card">
+          <h2 class="card-title">商品リサーチ</h2>
+          <div class="form-group">
+            <label>商品名・キーワード</label>
+            <input type="text" id="rs-keyword" class="input" placeholder="例: ポケモンカード BOX">
+          </div>
+          <p class="form-hint">各販路での販売価格を入力すると自動で最適ルートを分析します</p>
+
+          <div class="price-input-grid">
+            <div class="price-input-row">
+              <span class="price-platform-label">Amazon</span>
+              <div class="input-with-unit">
+                <input type="number" id="rs-price-amazon" class="input" inputmode="numeric" placeholder="販売価格">
+                <span class="unit">円</span>
+              </div>
+            </div>
+            <div class="price-input-row">
+              <span class="price-platform-label">メルカリ</span>
+              <div class="input-with-unit">
+                <input type="number" id="rs-price-mercari" class="input" inputmode="numeric" placeholder="販売価格">
+                <span class="unit">円</span>
+              </div>
+            </div>
+            <div class="price-input-row">
+              <span class="price-platform-label">ヤフオク</span>
+              <div class="input-with-unit">
+                <input type="number" id="rs-price-yahoo" class="input" inputmode="numeric" placeholder="販売価格">
+                <span class="unit">円</span>
+              </div>
+            </div>
+            <div class="price-input-row">
+              <span class="price-platform-label">楽天</span>
+              <div class="input-with-unit">
+                <input type="number" id="rs-price-rakuten" class="input" inputmode="numeric" placeholder="販売価格">
+                <span class="unit">円</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row" style="margin-top:10px">
+            <div class="form-group flex-1">
+              <label>回転率（売れやすさ）</label>
+              <select id="rs-turnover" class="input">
+                <option value="5">非常に速い</option>
+                <option value="4">速い</option>
+                <option value="3" selected>普通</option>
+                <option value="2">遅い</option>
+                <option value="1">非常に遅い</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label>競合の多さ</label>
+              <select id="rs-competition" class="input">
+                <option value="1">非常に少ない</option>
+                <option value="2">少ない</option>
+                <option value="3" selected>普通</option>
+                <option value="4">多い</option>
+                <option value="5">非常に多い</option>
+              </select>
+            </div>
+          </div>
+
+          <button id="rs-analyze-btn" class="btn btn-accent btn-full">商品を分析する</button>
+        </section>
+
+        <!-- 分析結果 -->
+        <section id="rs-result" class="hidden">
+          <div id="rs-result-content"></div>
+        </section>
+
+        <!-- 仕入れ上限価格の逆算 -->
+        <section class="card">
+          <h2 class="card-title">仕入れ上限価格を逆算</h2>
+          <p class="form-hint">販売価格と目標利益率から、いくらまでなら仕入れてOKかを算出</p>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>想定販売価格</label>
+              <div class="input-with-unit">
+                <input type="number" id="rs-rev-sale" class="input" inputmode="numeric" placeholder="0">
+                <span class="unit">円</span>
+              </div>
+            </div>
+            <div class="form-group flex-1">
+              <label>目標利益率</label>
+              <div class="input-with-unit">
+                <input type="number" id="rs-rev-margin" class="input" inputmode="numeric" value="20" placeholder="20">
+                <span class="unit">%</span>
+              </div>
+            </div>
+          </div>
+          <button id="rs-maxprice-btn" class="btn btn-primary btn-full">仕入れ上限を算出</button>
+          <div id="rs-maxprice-result" class="hidden"></div>
+        </section>
+
+        <!-- 今月のトレンド -->
+        <section class="card">
+          <h2 class="card-title">今月のトレンド</h2>
+          <div id="rs-trends-current"></div>
+          <h3 class="card-subtitle" style="margin-top:12px;">来月の注目</h3>
+          <div id="rs-trends-upcoming"></div>
+        </section>
+
+        <!-- おすすめカテゴリーランキング -->
+        <section class="card">
+          <h2 class="card-title">おすすめカテゴリーTOP10</h2>
+          <div class="filter-bar">
+            <button class="cat-sort-btn active" data-sort="score">総合</button>
+            <button class="cat-sort-btn" data-sort="margin">利益率</button>
+            <button class="cat-sort-btn" data-sort="turnover">回転率</button>
+            <button class="cat-sort-btn" data-sort="easy">難易度低</button>
+          </div>
+          <div id="rs-category-ranking"></div>
+        </section>
+
+        <!-- リサーチ済み商品リスト -->
+        <section class="card">
+          <div class="page-header-row" style="margin-bottom:8px">
+            <h2 class="card-title" style="margin-bottom:0">リサーチ履歴</h2>
+            <button id="rs-clear-history" class="btn btn-outline btn-sm">クリア</button>
+          </div>
+          <div id="rs-history-list">
+            <p class="text-muted text-center">リサーチ履歴はまだありません</p>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
     <!-- ========== 利益計算ページ ========== -->
-    <main id="page-calculator" class="page active">
+    <main id="page-calculator" class="page">
       <div class="page-content">
         <section class="card">
           <h2 class="card-title">クイック利益計算</h2>
@@ -542,6 +675,7 @@
 
   <script src="js/platforms.js"></script>
   <script src="js/storage.js"></script>
+  <script src="js/research.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

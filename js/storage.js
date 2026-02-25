@@ -6,6 +6,7 @@ const Storage = (() => {
     PRODUCTS: 'sedori_products',
     SETTINGS: 'sedori_settings',
     HISTORY: 'sedori_calc_history',
+    RESEARCH: 'sedori_research',
   };
 
   function save(key, data) {
@@ -100,12 +101,32 @@ const Storage = (() => {
     save(KEYS.HISTORY, []);
   }
 
+  // --- リサーチデータ ---
+  function getResearchItems() {
+    return load(KEYS.RESEARCH, []);
+  }
+
+  function addResearchItem(item) {
+    const items = getResearchItems();
+    item.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    item.createdAt = new Date().toISOString();
+    items.unshift(item);
+    if (items.length > 200) items.length = 200;
+    save(KEYS.RESEARCH, items);
+    return item;
+  }
+
+  function clearResearchItems() {
+    save(KEYS.RESEARCH, []);
+  }
+
   // --- エクスポート/インポート ---
   function exportAll() {
     return {
       products: getProducts(),
       settings: getSettings(),
       history: getHistory(),
+      research: getResearchItems(),
       exportedAt: new Date().toISOString(),
     };
   }
@@ -114,6 +135,7 @@ const Storage = (() => {
     if (data.products) saveProducts(data.products);
     if (data.settings) saveSettings(data.settings);
     if (data.history) save(KEYS.HISTORY, data.history);
+    if (data.research) save(KEYS.RESEARCH, data.research);
   }
 
   // --- ダッシュボード統計 ---
@@ -164,6 +186,9 @@ const Storage = (() => {
     getHistory,
     addHistory,
     clearHistory,
+    getResearchItems,
+    addResearchItem,
+    clearResearchItems,
     exportAll,
     importAll,
     getStats,
