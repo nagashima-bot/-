@@ -171,6 +171,8 @@
                 <option value="mercari">メルカリ</option>
                 <option value="yahoo_auction">ヤフオク</option>
                 <option value="rakuten">楽天市場</option>
+                <option value="alibaba">アリババ(1688)</option>
+                <option value="aliexpress">AliExpress</option>
                 <option value="store">実店舗</option>
                 <option value="other">その他</option>
               </select>
@@ -490,7 +492,7 @@
         </section>
 
         <section class="card">
-          <h3 class="card-subtitle">共通設定</h3>
+          <h3 class="card-subtitle">物流コスト設定</h3>
           <div class="form-group">
             <label>デフォルト梱包資材費</label>
             <div class="input-with-unit">
@@ -498,6 +500,39 @@
               <span class="unit">円</span>
             </div>
           </div>
+          <div class="form-group">
+            <label>国内配送料（自己発送時）</label>
+            <div class="input-with-unit">
+              <input type="number" id="set-domestic-shipping" class="input" value="0" inputmode="numeric" placeholder="0">
+              <span class="unit">円</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>海外仕入れ送料（中国→日本）</label>
+            <div class="input-with-unit">
+              <input type="number" id="set-import-shipping" class="input" value="800" inputmode="numeric" placeholder="800">
+              <span class="unit">円</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>関税・消費税率（海外仕入れ時）</label>
+            <div class="input-with-unit">
+              <input type="number" id="set-import-tax-rate" class="input" value="10" inputmode="numeric" placeholder="10">
+              <span class="unit">%</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>倉庫保管料（月額按分）</label>
+            <div class="input-with-unit">
+              <input type="number" id="set-storage-cost" class="input" value="0" inputmode="numeric" placeholder="0">
+              <span class="unit">円</span>
+            </div>
+          </div>
+          <p class="form-hint">海外送料・関税は中国（アリババ/アリエクスプレス）仕入れ時に自動反映されます</p>
+        </section>
+
+        <section class="card">
+          <h3 class="card-subtitle">共通設定</h3>
           <div class="form-group">
             <label>目標利益率</label>
             <div class="input-with-unit">
@@ -566,6 +601,8 @@
                 <option value="mercari">メルカリ</option>
                 <option value="yahoo_auction">ヤフオク</option>
                 <option value="rakuten">楽天市場</option>
+                <option value="alibaba">アリババ(1688)</option>
+                <option value="aliexpress">AliExpress</option>
                 <option value="store">実店舗</option>
                 <option value="other">その他</option>
               </select>

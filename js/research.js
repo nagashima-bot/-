@@ -116,6 +116,21 @@ const Research = (() => {
     { id: 'p117', name: '鬼滅の刃 全巻セット 1-23巻', category: 'books', buyPrice: 4000, sellPrice: 8500, bestBuy: 'mercari', bestSell: 'amazon', turnover: 4, competition: 3, difficulty: 1, seasonalKeywords: [], tip: '完結済み人気漫画は全巻セットに安定需要。' },
     { id: 'p118', name: 'DJI Osmo Action 4', category: 'electronics', buyPrice: 35000, sellPrice: 48000, bestBuy: 'amazon', bestSell: 'mercari', turnover: 3, competition: 2, difficulty: 2, seasonalKeywords: ['GW', '夏物'], tip: 'アクションカメラは旅行・アウトドアシーズン前に需要増。' },
     { id: 'p119', name: 'バンダイ たまごっちユニ 限定セット', category: 'toys', buyPrice: 5500, sellPrice: 9000, bestBuy: 'store', bestSell: 'mercari', turnover: 4, competition: 2, difficulty: 2, seasonalKeywords: ['クリスマス'], tip: '限定カラーは即完売→メルカリでプレミア。' },
+
+    // ===== 中国仕入れ（アリババ/AliExpress） =====
+    { id: 'p200', name: 'ワイヤレスイヤホン OEM品（AirPods互換）', category: 'electronics', buyPrice: 500, sellPrice: 2500, bestBuy: 'aliexpress', bestSell: 'mercari', turnover: 5, competition: 4, difficulty: 2, seasonalKeywords: [], tip: 'AliExpressで大量仕入れ。パッケージを工夫して差別化。送料込み原価に注意。', isImport: true },
+    { id: 'p201', name: 'スマホケース 手帳型（iPhone/Galaxy対応）', category: 'electronics', buyPrice: 150, sellPrice: 1200, bestBuy: 'alibaba', bestSell: 'mercari', turnover: 5, competition: 5, difficulty: 1, seasonalKeywords: [], tip: '1688で50個〜ロット仕入れ。多品種展開で回転率アップ。', isImport: true },
+    { id: 'p202', name: 'LED投影プラネタリウム ライト', category: 'electronics', buyPrice: 800, sellPrice: 3500, bestBuy: 'aliexpress', bestSell: 'mercari', turnover: 4, competition: 3, difficulty: 1, seasonalKeywords: ['クリスマス'], tip: 'SNS映え商品。クリスマス前に需要急増。動画付きで出品がコツ。', isImport: true },
+    { id: 'p203', name: 'ネイルアートキット ジェルネイルセット', category: 'cosme', buyPrice: 600, sellPrice: 3000, bestBuy: 'alibaba', bestSell: 'mercari', turnover: 4, competition: 3, difficulty: 1, seasonalKeywords: [], tip: 'セット販売で高利益。初心者向けキットが人気。', isImport: true },
+    { id: 'p204', name: 'ペット用 自動給水器 フィルター付き', category: 'daily', buyPrice: 700, sellPrice: 3000, bestBuy: 'aliexpress', bestSell: 'amazon', turnover: 4, competition: 3, difficulty: 1, seasonalKeywords: ['夏物'], tip: 'ペット用品は安定需要。Amazon FBAで販売がベスト。', isImport: true },
+    { id: 'p205', name: '車載ワイヤレス充電器 マグネット式', category: 'electronics', buyPrice: 400, sellPrice: 2200, bestBuy: 'alibaba', bestSell: 'amazon', turnover: 4, competition: 3, difficulty: 2, seasonalKeywords: [], tip: '1688で安く仕入れ。自社ブランド化（OEM）で競合と差別化。', isImport: true },
+    { id: 'p206', name: 'ミニプロジェクター 家庭用', category: 'electronics', buyPrice: 3000, sellPrice: 9000, bestBuy: 'aliexpress', bestSell: 'amazon', turnover: 3, competition: 3, difficulty: 2, seasonalKeywords: ['クリスマス'], tip: '技適マークの確認必須。日本語説明書を用意すると高評価。', isImport: true },
+    { id: 'p207', name: 'シリコン製キッチン調理器具セット', category: 'daily', buyPrice: 400, sellPrice: 2500, bestBuy: 'alibaba', bestSell: 'mercari', turnover: 4, competition: 3, difficulty: 1, seasonalKeywords: [], tip: 'カラフルなセット品が人気。食品衛生法対応品を選ぶこと。', isImport: true },
+    { id: 'p208', name: 'アクションカメラ 4K 防水ケース付き', category: 'electronics', buyPrice: 2500, sellPrice: 7000, bestBuy: 'aliexpress', bestSell: 'amazon', turnover: 3, competition: 3, difficulty: 2, seasonalKeywords: ['GW', '夏物', 'アウトドア'], tip: 'GoPro互換品。アクセサリーセットで付加価値をつける。', isImport: true },
+    { id: 'p209', name: 'LEDテープライト RGB リモコン付き', category: 'electronics', buyPrice: 300, sellPrice: 1800, bestBuy: 'alibaba', bestSell: 'mercari', turnover: 5, competition: 4, difficulty: 1, seasonalKeywords: ['クリスマス'], tip: 'SNSで人気の部屋装飾。長さバリエーションで展開。', isImport: true },
+    { id: 'p210', name: 'ヨガマット TPE素材 6mm', category: 'outdoor', buyPrice: 500, sellPrice: 2500, bestBuy: 'alibaba', bestSell: 'amazon', turnover: 4, competition: 3, difficulty: 1, seasonalKeywords: [], tip: 'TPE素材は高級感あり。ケース付きセットで差別化。', isImport: true },
+    { id: 'p211', name: 'メイクブラシセット 12本入り ケース付き', category: 'cosme', buyPrice: 400, sellPrice: 2200, bestBuy: 'alibaba', bestSell: 'mercari', turnover: 4, competition: 3, difficulty: 1, seasonalKeywords: [], tip: 'ケース付きセットが人気。ピンクゴールドなど高見えカラーを選ぶ。', isImport: true },
+    { id: 'p212', name: 'キッズ知育玩具 モンテッソーリ木製パズル', category: 'toys', buyPrice: 300, sellPrice: 1800, bestBuy: 'alibaba', bestSell: 'mercari', turnover: 4, competition: 2, difficulty: 1, seasonalKeywords: ['クリスマス'], tip: '知育系は親御さんに人気。安全認証（CE/ST）マーク付きを選ぶ。', isImport: true },
   ];
 
   // ================================================================
@@ -142,7 +157,34 @@ const Research = (() => {
   const platformNames = {
     'amazon': 'Amazon', 'mercari': 'メルカリ', 'yahoo_auction': 'ヤフオク',
     'yahoo': 'ヤフオク', 'rakuten': '楽天', 'rakuma': 'ラクマ', 'store': '実店舗',
+    'alibaba': 'アリババ(1688)', 'aliexpress': 'AliExpress',
   };
+
+  // ================================================================
+  // プラットフォーム検索URL生成
+  // ================================================================
+  function getSearchUrl(platformKey, productName) {
+    const q = encodeURIComponent(productName);
+    switch (platformKey) {
+      case 'amazon':
+        return `https://www.amazon.co.jp/s?k=${q}`;
+      case 'mercari':
+        return `https://jp.mercari.com/search?keyword=${q}`;
+      case 'yahoo_auction':
+      case 'yahoo':
+        return `https://auctions.yahoo.co.jp/search/search?p=${q}`;
+      case 'rakuten':
+        return `https://search.rakuten.co.jp/search/mall/${q}`;
+      case 'rakuma':
+        return `https://fril.jp/s?query=${q}`;
+      case 'alibaba':
+        return `https://s.1688.com/selloffer/offer_search.htm?keywords=${q}`;
+      case 'aliexpress':
+        return `https://www.aliexpress.com/wholesale?SearchText=${q}`;
+      default:
+        return null;
+    }
+  }
 
   // ================================================================
   // 季節スコア計算（0〜1）
@@ -240,8 +282,20 @@ const Research = (() => {
         platformResult = { totalFees: 0, platform: platformNames[sellPlatformKey] || sellPlatformKey };
     }
 
+    // 海外仕入れの場合は輸入コストを加算
+    const isImport = product.isImport || product.bestBuy === 'alibaba' || product.bestBuy === 'aliexpress';
+    let importCost = 0;
+    if (isImport) {
+      const importShipping = settings.importShipping || 800;
+      const importTaxRate = settings.importTaxRate || 10;
+      importCost = importShipping + Math.round(product.buyPrice * importTaxRate / 100);
+    }
+
+    const storageCost = settings.storageCost || 0;
+    const totalExtraCost = settings.packagingCost + importCost + storageCost;
+
     const profit = Platforms.calculateProfit(product.buyPrice, product.sellPrice, platformResult, {
-      packagingCost: settings.packagingCost,
+      packagingCost: totalExtraCost,
     });
 
     return {
@@ -250,6 +304,8 @@ const Research = (() => {
       roi: profit.roi,
       totalFees: platformResult.totalFees,
       platformName: platformResult.platform,
+      importCost,
+      isImport,
     };
   }
 
@@ -478,6 +534,7 @@ const Research = (() => {
     getCurrentTrends,
     getCategoryRanking,
     calcMaxPurchasePrice,
+    getSearchUrl,
   };
 })();
 

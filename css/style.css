@@ -1221,6 +1221,62 @@ select.input {
   color: var(--blue);
 }
 
+/* Recommend Search Links */
+.recommend-links {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.recommend-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.recommend-link.link-buy {
+  background: var(--orange-bg);
+  color: var(--orange);
+  border: 1px solid var(--orange);
+}
+
+.recommend-link.link-buy:hover {
+  background: var(--orange);
+  color: white;
+}
+
+.recommend-link.link-sell {
+  background: var(--green-bg);
+  color: var(--green-text);
+  border: 1px solid var(--green);
+}
+
+.recommend-link.link-sell:hover {
+  background: var(--green);
+  color: white;
+}
+
+/* Import Badge */
+.import-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--red-bg);
+  color: var(--red);
+  margin-left: 4px;
+}
+
 /* Recommend Tip */
 .recommend-tip {
   font-size: 0.72rem;

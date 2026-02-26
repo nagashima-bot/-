@@ -61,6 +61,10 @@ const App = (() => {
     setVal('set-yahoo-premium', s.yahooPremium ? '1' : '0');
     setVal('set-mercari-shipping', s.mercariShipping);
     setVal('set-packaging', s.packagingCost);
+    setVal('set-domestic-shipping', s.domesticShipping || 0);
+    setVal('set-import-shipping', s.importShipping || 800);
+    setVal('set-import-tax-rate', s.importTaxRate || 10);
+    setVal('set-storage-cost', s.storageCost || 0);
     setVal('set-target-rate', s.targetProfitRate);
 
     // 計算画面にもデフォルト反映
@@ -80,6 +84,10 @@ const App = (() => {
       yahooPremium: getVal('set-yahoo-premium') === '1',
       mercariShipping: getVal('set-mercari-shipping'),
       packagingCost: getNum('set-packaging') || 30,
+      domesticShipping: getNum('set-domestic-shipping') || 0,
+      importShipping: getNum('set-import-shipping') || 800,
+      importTaxRate: getNum('set-import-tax-rate') || 10,
+      storageCost: getNum('set-storage-cost') || 0,
       targetProfitRate: getNum('set-target-rate') || 20,
       darkMode: document.documentElement.getAttribute('data-theme') === 'dark',
     };
@@ -584,6 +592,8 @@ const App = (() => {
       'mercari': 'メルカリ',
       'yahoo_auction': 'ヤフオク',
       'rakuten': '楽天',
+      'alibaba': 'アリババ',
+      'aliexpress': 'AliExpress',
       'store': '実店舗',
       'other': 'その他',
     };
@@ -962,13 +972,17 @@ const App = (() => {
         return s;
       };
 
+      // 検索リンク生成
+      const buyUrl = Research.getSearchUrl(r.bestBuy, r.name);
+      const sellUrl = Research.getSearchUrl(r.bestSell, r.name);
+
       return `
         <div class="recommend-card rank-${r.score.rank}">
           <div class="recommend-header">
             <span class="recommend-rank rank-badge-${r.score.rank}">${r.score.rank}</span>
             <div class="recommend-title-area">
               <div class="recommend-name">${escHtml(r.name)}</div>
-              <div class="recommend-category">${r.categoryIcon} ${r.categoryName}</div>
+              <div class="recommend-category">${r.categoryIcon} ${r.categoryName}${r.simulation.isImport ? '<span class="import-badge">海外仕入れ</span>' : ''}</div>
             </div>
             <span class="recommend-score">${r.score.total}pt</span>
           </div>
@@ -1002,7 +1016,12 @@ const App = (() => {
             </div>
           </div>
 
-          <div class="recommend-tip">${r.tip}</div>
+          <div class="recommend-links">
+            ${buyUrl ? `<a href="${buyUrl}" target="_blank" rel="noopener" class="recommend-link link-buy">${r.buyPlatformName}で探す</a>` : ''}
+            ${sellUrl ? `<a href="${sellUrl}" target="_blank" rel="noopener" class="recommend-link link-sell">${r.sellPlatformName}で相場を見る</a>` : ''}
+          </div>
+
+          <div class="recommend-tip">${r.tip}${r.simulation.importCost > 0 ? `<br>※輸入コスト(送料+関税): 約¥${fmt(r.simulation.importCost)} を含む` : ''}</div>
 
           <div class="recommend-actions">
             <button class="btn btn-secondary rs-save-product" data-index="${i}">商品リストに保存</button>

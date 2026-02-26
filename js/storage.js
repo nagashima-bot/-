@@ -72,6 +72,10 @@ const Storage = (() => {
       yahooPremium: true,
       mercariShipping: 'nekopos',
       packagingCost: 30,
+      domesticShipping: 0,
+      importShipping: 800,
+      importTaxRate: 10,
+      storageCost: 0,
       targetProfitRate: 20,
       darkMode: false,
     });
