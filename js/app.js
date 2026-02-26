@@ -5,6 +5,9 @@ const App = (() => {
   let currentPage = 'research';
   let editingProductId = null;
   let currentFilter = 'all';
+  let researchCategory = 'all';
+  let researchSortBy = 'score';
+  let researchResults = [];
 
   // ========== 初期化 ==========
   function init() {
@@ -14,9 +17,7 @@ const App = (() => {
     bindResearchEvents();
     initDarkMode();
     showPage('research');
-    renderTrends();
-    renderCategoryRanking('score');
-    renderResearchHistory();
+    initResearchPage();
   }
 
   // ========== セレクトボックスの選択肢を動的生成 ==========
@@ -120,11 +121,7 @@ const App = (() => {
     // ページ固有の初期化
     if (page === 'dashboard') refreshDashboard();
     if (page === 'products') renderProductList();
-    if (page === 'research') {
-      renderTrends();
-      renderCategoryRanking('score');
-      renderResearchHistory();
-    }
+    if (page === 'research') initResearchPage();
   }
 
   // ========== イベントバインド ==========
@@ -173,9 +170,9 @@ const App = (() => {
 
     // 商品リスト
     document.getElementById('add-product-btn').addEventListener('click', () => openProductModal());
-    document.querySelectorAll('.filter-btn').forEach(btn => {
+    document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.filter-btn[data-filter]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentFilter = btn.dataset.filter;
         renderProductList();
@@ -825,264 +822,277 @@ const App = (() => {
     setTimeout(() => toastEl.classList.remove('show'), 2500);
   }
 
-  // ========== リサーチ機能 ==========
-
-  const platformNameMap = {
-    'amazon': 'Amazon', 'mercari': 'メルカリ', 'yahoo_auction': 'ヤフオク',
-    'yahoo': 'ヤフオク', 'rakuten': '楽天', 'rakuma': 'ラクマ', 'store': '実店舗',
-  };
+  // ========================================================================
+  // 自動リサーチ機能
+  // ========================================================================
 
   function bindResearchEvents() {
-    // 商品分析
-    document.getElementById('rs-analyze-btn').addEventListener('click', runResearchAnalysis);
+    // 自動リサーチ実行
+    document.getElementById('rs-auto-research-btn').addEventListener('click', runAutoResearch);
+
+    // カテゴリーフィルター（動的生成するので後で追加）
+    // ソートボタン
+    document.querySelectorAll('.rs-sort-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.rs-sort-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        researchSortBy = btn.dataset.sort;
+        if (researchResults.length > 0) {
+          // 既存の結果を再ソート
+          runAutoResearch();
+        }
+      });
+    });
 
     // 仕入れ上限逆算
     document.getElementById('rs-maxprice-btn').addEventListener('click', runMaxPriceCalc);
+  }
 
-    // カテゴリーソート
-    document.querySelectorAll('.cat-sort-btn').forEach(btn => {
+  // リサーチページ初期化
+  function initResearchPage() {
+    initCategoryFilter();
+    renderTrends();
+    renderTrendingProducts();
+    renderCategoryRanking();
+  }
+
+  // カテゴリーフィルターボタンを動的生成
+  function initCategoryFilter() {
+    const container = document.getElementById('rs-category-filter');
+    if (!container) return;
+
+    // 既存のボタンをクリア
+    container.innerHTML = '<button class="filter-btn active" data-category="all">すべて</button>';
+
+    // カテゴリーボタンを追加
+    Object.entries(Research.categoryDB).forEach(([key, cat]) => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn';
+      btn.dataset.category = key;
+      btn.textContent = `${cat.icon} ${cat.name}`;
+      container.appendChild(btn);
+    });
+
+    // イベント
+    container.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.cat-sort-btn').forEach(b => b.classList.remove('active'));
+        container.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        renderCategoryRanking(btn.dataset.sort);
-      });
-    });
-
-    // リサーチ履歴クリア
-    document.getElementById('rs-clear-history').addEventListener('click', () => {
-      showConfirm('リサーチ履歴をクリアしますか？', () => {
-        Storage.clearResearchItems();
-        renderResearchHistory();
-        toast('リサーチ履歴をクリアしました');
+        researchCategory = btn.dataset.category;
+        if (researchResults.length > 0) {
+          runAutoResearch();
+        }
       });
     });
   }
 
-  function runResearchAnalysis() {
-    const keyword = getVal('rs-keyword');
-    if (!keyword.trim()) {
-      toast('商品名・キーワードを入力してください');
-      return;
-    }
+  // 自動リサーチ実行
+  function runAutoResearch() {
+    const loadingEl = document.getElementById('rs-loading');
+    const summaryEl = document.getElementById('rs-summary');
+    const resultsEl = document.getElementById('rs-results');
+    const loadingText = document.getElementById('rs-loading-text');
 
-    const prices = {
-      amazon: getNum('rs-price-amazon'),
-      mercari: getNum('rs-price-mercari'),
-      yahoo_auction: getNum('rs-price-yahoo'),
-      rakuten: getNum('rs-price-rakuten'),
-    };
+    // ローディング表示
+    loadingEl.classList.remove('hidden');
+    summaryEl.classList.add('hidden');
+    resultsEl.classList.add('hidden');
 
-    const hasPrices = Object.values(prices).some(v => v > 0);
-    if (!hasPrices) {
-      toast('少なくとも2つの販路の価格を入力してください');
-      return;
-    }
+    const messages = [
+      '各販売サイトを分析中...',
+      '売れ筋ランキングをチェック中...',
+      '利益率を計算中...',
+      '最適ルートを分析中...',
+      'おすすめ商品を選定中...',
+    ];
 
-    // 利益率・ROIの推定（最安仕入れ→最高販売）
-    const buyPrices = Object.entries(prices).filter(([, v]) => v > 0);
-    const minBuy = Math.min(...buyPrices.map(([, v]) => v));
-    const maxSell = Math.max(...buyPrices.map(([, v]) => v));
-    const estimatedMargin = maxSell > 0 ? ((maxSell - minBuy) / maxSell * 100) : 0;
-    const estimatedROI = minBuy > 0 ? ((maxSell - minBuy) / minBuy * 100) : 0;
+    let msgIndex = 0;
+    const msgInterval = setInterval(() => {
+      msgIndex = (msgIndex + 1) % messages.length;
+      loadingText.textContent = messages[msgIndex];
+    }, 600);
 
-    const item = {
-      name: keyword.trim(),
-      prices,
-      turnoverRating: parseInt(getVal('rs-turnover')) || 3,
-      competitionRating: parseInt(getVal('rs-competition')) || 3,
-      estimatedMargin,
-      estimatedROI,
-      keywords: keyword.trim(),
-    };
+    // 遅延で結果表示（リサーチ感を演出）
+    setTimeout(() => {
+      clearInterval(msgInterval);
+      loadingEl.classList.add('hidden');
 
-    // スコアリング
-    const score = Research.scoreProduct(item);
+      // リサーチ実行
+      researchResults = Research.autoResearch({
+        category: researchCategory,
+        sortBy: researchSortBy,
+      });
 
-    // 最適ルート提案
-    const bestRoute = Research.suggestBestRoute(prices);
+      // サマリー表示
+      renderResearchSummary(researchResults);
+      summaryEl.classList.remove('hidden');
 
-    // カテゴリーマッチング
-    const matchedCategories = Research.matchCategories(keyword);
-
-    // 履歴に保存
-    Storage.addResearchItem({
-      name: item.name,
-      prices,
-      score,
-      bestRoute,
-      matchedCategories: matchedCategories.slice(0, 3),
-    });
-
-    // 結果レンダリング
-    renderResearchResult(item, score, bestRoute, matchedCategories);
-    renderResearchHistory();
+      // 結果リスト表示
+      renderResearchResults(researchResults);
+      resultsEl.classList.remove('hidden');
+    }, 2000);
   }
 
-  function renderResearchResult(item, score, bestRoute, matchedCategories) {
-    const container = document.getElementById('rs-result-content');
-    let html = '';
+  // リサーチサマリー
+  function renderResearchSummary(results) {
+    document.getElementById('rs-summary-count').textContent = results.length;
 
-    // スコアカード
-    html += `
-      <div class="score-card rank-${score.rank}">
-        <div class="score-header">
-          <div>
-            <span class="score-rank score-rank-${score.rank}">${score.rank}</span>
-            <span style="margin-left:8px;font-weight:700;font-size:0.88rem">${score.rankLabel}</span>
-          </div>
-          <div class="score-total">
-            <div class="score-total-value">${score.total}</div>
-            <div class="score-total-label">/ 100 pt</div>
-          </div>
-        </div>
+    if (results.length > 0) {
+      const avgProfit = Math.round(results.reduce((s, r) => s + r.simulation.netProfit, 0) / results.length);
+      const avgMargin = Math.round(results.reduce((s, r) => s + r.score.margin, 0) / results.length * 10) / 10;
+      document.getElementById('rs-summary-avg-profit').textContent = `¥${fmt(avgProfit)}`;
+      document.getElementById('rs-summary-avg-margin').textContent = `${avgMargin}%`;
+    }
+  }
 
-        <div class="score-bars">
-          ${renderScoreBar('利益率', score.scores.profitMargin, 30, 'margin')}
-          ${renderScoreBar('ROI', score.scores.roi, 20, 'roi')}
-          ${renderScoreBar('回転率', score.scores.turnover, 15, 'turnover')}
-          ${renderScoreBar('競合', score.scores.competition, 15, 'competition')}
-          ${renderScoreBar('季節', score.scores.seasonal, 10, 'seasonal')}
-          ${renderScoreBar('価格差', score.scores.priceDiff, 10, 'pricediff')}
-        </div>
-      </div>
-    `;
+  // リサーチ結果リスト
+  function renderResearchResults(results) {
+    const container = document.getElementById('rs-results-list');
 
-    // 最適ルート提案
-    if (bestRoute) {
-      const isProfit = bestRoute.netProfit >= 0;
-      html += `
-        <div class="best-route">
-          <div class="best-route-title">最適な仕入れ→販売ルート</div>
-          <div class="best-route-flow">
-            <span>${platformNameMap[bestRoute.buyFrom] || bestRoute.buyFrom}</span>
-            <span>¥${fmt(bestRoute.buyPrice)}</span>
-            <span class="best-route-arrow">→</span>
-            <span>${platformNameMap[bestRoute.sellOn] || bestRoute.sellOn}</span>
-            <span>¥${fmt(bestRoute.sellPrice)}</span>
-          </div>
-          <div class="best-route-profit ${isProfit ? 'result-profit-positive' : 'result-profit-negative'}">
-            純利益: ${isProfit ? '+' : ''}¥${fmt(bestRoute.netProfit)}
-          </div>
-          <div class="best-route-details">
-            <span>利益率 ${bestRoute.profitRate}%</span>
-            <span>ROI ${bestRoute.roi}%</span>
-            <span>手数料 ¥${fmt(bestRoute.fees)}</span>
-          </div>
-        </div>
-      `;
+    if (results.length === 0) {
+      container.innerHTML = '<p class="text-muted text-center" style="padding:20px">条件に一致する商品が見つかりませんでした</p>';
+      return;
     }
 
-    // カテゴリーマッチ
-    if (matchedCategories.length > 0) {
-      html += '<h3 class="card-subtitle" style="margin:8px 0">マッチするカテゴリー</h3>';
-      matchedCategories.slice(0, 3).forEach(cat => {
-        const difficultyStars = renderStars(cat.difficulty, 5);
-        html += `
-          <div class="category-match">
-            <div class="category-match-name">${cat.name} <span class="category-match-parent">${cat.parent}</span></div>
-            <div class="category-match-stats">
-              <span>平均利益率 <strong>${cat.avgMargin}%</strong></span>
-              <span>回転率 ${renderStars(cat.turnover, 5)}</span>
-              <span>難易度 ${difficultyStars}</span>
+    container.innerHTML = results.map((r, i) => {
+      const isProfit = r.simulation.netProfit >= 0;
+      const stars = (count, max) => {
+        let s = '';
+        for (let j = 0; j < max; j++) s += j < count ? '★' : '☆';
+        return s;
+      };
+
+      return `
+        <div class="recommend-card rank-${r.score.rank}">
+          <div class="recommend-header">
+            <span class="recommend-rank rank-badge-${r.score.rank}">${r.score.rank}</span>
+            <div class="recommend-title-area">
+              <div class="recommend-name">${escHtml(r.name)}</div>
+              <div class="recommend-category">${r.categoryIcon} ${r.categoryName}</div>
             </div>
-            <div class="category-match-tips">${cat.tips}</div>
+            <span class="recommend-score">${r.score.total}pt</span>
           </div>
-        `;
-      });
-    }
 
-    // 商品リストに保存ボタン
-    if (bestRoute) {
-      html += `
-        <button id="rs-save-to-products" class="btn btn-secondary btn-full" style="margin-top:10px">
-          商品リストに保存
-        </button>
+          <div class="recommend-info-row">
+            <span class="recommend-info-item">回転率 <span class="stars">${stars(r.turnover, 5)}</span></span>
+            <span class="recommend-info-item">難易度 <span class="stars">${stars(r.difficulty, 5)}</span></span>
+            <span class="recommend-info-item">競合 <span class="stars">${stars(r.competition, 5)}</span></span>
+          </div>
+
+          <div class="recommend-route">
+            <div class="recommend-route-flow">
+              <div class="route-platform">
+                <span class="route-platform-name">仕入れ: ${r.buyPlatformName}</span>
+                <span class="route-platform-price">¥${fmt(r.buyPrice)}</span>
+              </div>
+              <span class="route-arrow">→</span>
+              <div class="route-platform">
+                <span class="route-platform-name">販売: ${r.sellPlatformName}</span>
+                <span class="route-platform-price">¥${fmt(r.sellPrice)}</span>
+              </div>
+            </div>
+            <div class="recommend-profit-row">
+              <span class="recommend-net-profit ${isProfit ? 'result-profit-positive' : 'result-profit-negative'}">
+                純利益 ${isProfit ? '+' : ''}¥${fmt(r.simulation.netProfit)}
+              </span>
+              <div class="recommend-metrics">
+                <span class="recommend-metric-badge badge-green">利益率 ${r.simulation.profitRate}%</span>
+                <span class="recommend-metric-badge badge-blue">ROI ${r.simulation.roi}%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="recommend-tip">${r.tip}</div>
+
+          <div class="recommend-actions">
+            <button class="btn btn-secondary rs-save-product" data-index="${i}">商品リストに保存</button>
+            <button class="btn btn-outline rs-calc-product" data-index="${i}">詳細計算</button>
+          </div>
+        </div>
       `;
-    }
+    }).join('');
 
-    container.innerHTML = html;
-    document.getElementById('rs-result').classList.remove('hidden');
-
-    // 保存ボタンイベント
-    const saveBtn = document.getElementById('rs-save-to-products');
-    if (saveBtn && bestRoute) {
-      saveBtn.addEventListener('click', () => {
+    // 保存ボタン
+    container.querySelectorAll('.rs-save-product').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const r = results[parseInt(btn.dataset.index)];
+        const sellPlatformKey = r.bestSell === 'yahoo_auction' ? 'yahoo' : r.bestSell;
         Storage.addProduct({
-          name: item.name,
+          name: r.name,
           status: 'research',
-          source: bestRoute.buyFrom,
-          purchasePrice: bestRoute.buyPrice,
-          salePrice: bestRoute.sellPrice,
-          platform: bestRoute.sellOn,
-          memo: `スコア: ${score.rank} (${score.total}pt) | ROI: ${bestRoute.roi}%`,
+          source: r.bestBuy,
+          purchasePrice: r.buyPrice,
+          salePrice: r.sellPrice,
+          platform: sellPlatformKey,
+          memo: `スコア: ${r.score.rank} (${r.score.total}pt) | 利益率: ${r.simulation.profitRate}% | ROI: ${r.simulation.roi}%`,
         });
         toast('商品リストに保存しました');
       });
-    }
+    });
+
+    // 詳細計算ボタン
+    container.querySelectorAll('.rs-calc-product').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const r = results[parseInt(btn.dataset.index)];
+        const sellPlatformKey = r.bestSell === 'yahoo_auction' ? 'yahoo' : r.bestSell;
+        setVal('calc-product-name', r.name);
+        setVal('calc-source', r.bestBuy);
+        setVal('calc-purchase-price', r.buyPrice);
+        setVal('calc-platform', sellPlatformKey);
+        setVal('calc-sale-price', r.sellPrice);
+        onPlatformChange();
+        showPage('calculator');
+        runCalculation();
+      });
+    });
   }
 
-  function renderScoreBar(label, value, max, className) {
-    const pct = max > 0 ? (value / max * 100) : 0;
-    return `
-      <div class="score-bar-row">
-        <span class="score-bar-label">${label}</span>
-        <div class="score-bar">
-          <div class="score-bar-fill bar-${className}" style="width:${pct}%"></div>
-        </div>
-        <span class="score-bar-value">${Math.round(value)}</span>
-      </div>
-    `;
-  }
+  // 今月の注目商品（トレンド）
+  function renderTrendingProducts() {
+    const trending = Research.getTrendingProducts();
+    const container = document.getElementById('rs-trending-list');
 
-  function renderStars(count, max) {
-    let s = '';
-    for (let i = 0; i < max; i++) {
-      s += i < count ? '★' : '☆';
-    }
-    return s;
-  }
+    if (!container) return;
 
-  // 仕入れ上限価格の逆算
-  function runMaxPriceCalc() {
-    const salePrice = getNum('rs-rev-sale');
-    const targetMargin = getNum('rs-rev-margin');
-
-    if (!salePrice) {
-      toast('想定販売価格を入力してください');
+    if (trending.length === 0) {
+      container.innerHTML = '<p class="text-muted text-center">今月の特別な注目商品はありません</p>';
       return;
     }
 
-    const platforms = [
-      { key: 'amazon', name: 'Amazon' },
-      { key: 'mercari', name: 'メルカリ' },
-      { key: 'yahoo', name: 'ヤフオク' },
-      { key: 'rakuma', name: 'ラクマ' },
-    ];
+    container.innerHTML = trending.slice(0, 8).map(t => {
+      const isProfit = t.simulation.netProfit >= 0;
+      const dots = Array.from({ length: 5 }, (_, i) =>
+        `<span class="trending-dot ${i < t.demand ? 'active' : ''}"></span>`
+      ).join('');
 
-    let html = '<div class="maxprice-grid">';
-    platforms.forEach(p => {
-      const maxPrice = Research.calcMaxPurchasePrice(salePrice, targetMargin, p.key);
-      html += `
-        <div class="maxprice-card">
-          <div class="maxprice-platform">${p.name}で売る場合</div>
-          <div class="maxprice-value">¥${fmt(maxPrice)}</div>
-          <div class="maxprice-label">まで仕入れOK</div>
+      return `
+        <div class="trending-card">
+          <div class="trending-trend-name">${t.trendName}</div>
+          <div class="trending-header">
+            <span class="trending-name">${escHtml(t.name)}</span>
+            <div class="trending-demand">${dots}</div>
+          </div>
+          <div class="trending-profit">
+            <span class="trending-profit-value ${isProfit ? 'result-profit-positive' : 'result-profit-negative'}">
+              ${isProfit ? '+' : ''}¥${fmt(t.simulation.netProfit)}
+            </span>
+            <span class="trending-route-mini">
+              ${t.buyPlatformName} ¥${fmt(t.buyPrice)} → ${t.sellPlatformName} ¥${fmt(t.sellPrice)}
+            </span>
+          </div>
         </div>
       `;
-    });
-    html += '</div>';
-
-    const resultEl = document.getElementById('rs-maxprice-result');
-    resultEl.innerHTML = html;
-    resultEl.classList.remove('hidden');
+    }).join('');
   }
 
-  // トレンドレンダリング
+  // 季節トレンドテーマ
   function renderTrends() {
     const { current, upcoming } = Research.getCurrentTrends();
 
     const currentEl = document.getElementById('rs-trends-current');
     const upcomingEl = document.getElementById('rs-trends-upcoming');
+
+    if (!currentEl || !upcomingEl) return;
 
     if (current.length === 0) {
       currentEl.innerHTML = '<p class="text-muted">今月の特別なトレンドはありません</p>';
@@ -1119,52 +1129,66 @@ const App = (() => {
   }
 
   // カテゴリーランキング
-  function renderCategoryRanking(sortBy) {
-    const ranked = Research.getCategoryRanking(sortBy).slice(0, 10);
+  function renderCategoryRanking() {
+    const ranked = Research.getCategoryRanking();
     const container = document.getElementById('rs-category-ranking');
+    if (!container) return;
+
+    const stars = (count, max) => {
+      let s = '';
+      for (let j = 0; j < max; j++) s += j < Math.round(count) ? '★' : '☆';
+      return s;
+    };
 
     container.innerHTML = ranked.map((cat, i) => `
       <div class="cat-rank-item">
-        <span class="cat-rank-num ${i < 3 ? 'top-3' : ''}">${i + 1}</span>
+        <span class="cat-rank-icon">${cat.icon}</span>
         <div class="cat-rank-info">
-          <div class="cat-rank-name">${cat.name} <span class="cat-rank-parent">${cat.parent}</span></div>
+          <div class="cat-rank-name">${cat.name} <span style="font-size:0.68rem;color:var(--text-muted)">(${cat.productCount}商品)</span></div>
           <div class="cat-rank-metrics">
             <span class="cat-rank-metric">利益率 <span class="cat-rank-metric-value">${cat.avgMargin}%</span></span>
-            <span class="cat-rank-metric">回転 <span class="cat-rank-metric-value">${renderStars(cat.turnover, 5)}</span></span>
-            <span class="cat-rank-metric">難易度 <span class="cat-rank-metric-value">${renderStars(cat.difficulty, 5)}</span></span>
+            <span class="cat-rank-metric">回転 <span class="cat-rank-metric-value">${stars(cat.avgTurnover, 5)}</span></span>
+            <span class="cat-rank-metric">難易度 <span class="cat-rank-metric-value">${stars(cat.avgDifficulty, 5)}</span></span>
           </div>
-          <div class="cat-rank-tips">${cat.tips}</div>
         </div>
-        <span class="cat-rank-score">${cat.totalScore}</span>
+        <span class="cat-rank-score">${Math.round(cat.score)}</span>
       </div>
     `).join('');
   }
 
-  // リサーチ履歴
-  function renderResearchHistory() {
-    const items = Storage.getResearchItems();
-    const container = document.getElementById('rs-history-list');
+  // 仕入れ上限価格の逆算
+  function runMaxPriceCalc() {
+    const salePrice = getNum('rs-rev-sale');
+    const targetMargin = getNum('rs-rev-margin');
 
-    if (items.length === 0) {
-      container.innerHTML = '<p class="text-muted text-center">リサーチ履歴はまだありません</p>';
+    if (!salePrice) {
+      toast('想定販売価格を入力してください');
       return;
     }
 
-    container.innerHTML = items.slice(0, 20).map(item => {
-      const rank = item.score ? item.score.rank : '-';
-      const profit = item.bestRoute ? item.bestRoute.netProfit : 0;
-      const isProfit = profit >= 0;
+    const platforms = [
+      { key: 'amazon', name: 'Amazon' },
+      { key: 'mercari', name: 'メルカリ' },
+      { key: 'yahoo', name: 'ヤフオク' },
+      { key: 'rakuma', name: 'ラクマ' },
+    ];
 
-      return `
-        <div class="rs-history-item">
-          <span class="rs-history-name">${escHtml(item.name)}</span>
-          <span class="rs-history-rank score-rank-${rank}" style="font-size:0.75rem">${rank}</span>
-          <span class="rs-history-profit ${isProfit ? 'result-profit-positive' : 'result-profit-negative'}">
-            ${item.bestRoute ? `${isProfit ? '+' : ''}¥${fmt(profit)}` : '-'}
-          </span>
+    let html = '<div class="maxprice-grid">';
+    platforms.forEach(p => {
+      const maxPrice = Research.calcMaxPurchasePrice(salePrice, targetMargin, p.key);
+      html += `
+        <div class="maxprice-card">
+          <div class="maxprice-platform">${p.name}で売る場合</div>
+          <div class="maxprice-value">¥${fmt(maxPrice)}</div>
+          <div class="maxprice-label">まで仕入れOK</div>
         </div>
       `;
-    }).join('');
+    });
+    html += '</div>';
+
+    const resultEl = document.getElementById('rs-maxprice-result');
+    resultEl.innerHTML = html;
+    resultEl.classList.remove('hidden');
   }
 
   // ========== ユーティリティ ==========

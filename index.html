@@ -51,75 +51,78 @@
     <main id="page-research" class="page active">
       <div class="page-content">
 
-        <!-- 商品クイックリサーチ -->
-        <section class="card">
-          <h2 class="card-title">商品リサーチ</h2>
-          <div class="form-group">
-            <label>商品名・キーワード</label>
-            <input type="text" id="rs-keyword" class="input" placeholder="例: ポケモンカード BOX">
-          </div>
-          <p class="form-hint">各販路での販売価格を入力すると自動で最適ルートを分析します</p>
+        <!-- 自動リサーチヘッダー -->
+        <section class="card auto-research-hero">
+          <h2 class="card-title">自動リサーチ</h2>
+          <p class="form-hint">AIがおすすめ商品を自動リサーチし、利益シミュレーションまで全自動で実行します</p>
 
-          <div class="price-input-grid">
-            <div class="price-input-row">
-              <span class="price-platform-label">Amazon</span>
-              <div class="input-with-unit">
-                <input type="number" id="rs-price-amazon" class="input" inputmode="numeric" placeholder="販売価格">
-                <span class="unit">円</span>
-              </div>
-            </div>
-            <div class="price-input-row">
-              <span class="price-platform-label">メルカリ</span>
-              <div class="input-with-unit">
-                <input type="number" id="rs-price-mercari" class="input" inputmode="numeric" placeholder="販売価格">
-                <span class="unit">円</span>
-              </div>
-            </div>
-            <div class="price-input-row">
-              <span class="price-platform-label">ヤフオク</span>
-              <div class="input-with-unit">
-                <input type="number" id="rs-price-yahoo" class="input" inputmode="numeric" placeholder="販売価格">
-                <span class="unit">円</span>
-              </div>
-            </div>
-            <div class="price-input-row">
-              <span class="price-platform-label">楽天</span>
-              <div class="input-with-unit">
-                <input type="number" id="rs-price-rakuten" class="input" inputmode="numeric" placeholder="販売価格">
-                <span class="unit">円</span>
-              </div>
-            </div>
+          <!-- カテゴリーフィルター -->
+          <div class="filter-bar" id="rs-category-filter">
+            <button class="filter-btn active" data-category="all">すべて</button>
           </div>
 
-          <div class="form-row" style="margin-top:10px">
-            <div class="form-group flex-1">
-              <label>回転率（売れやすさ）</label>
-              <select id="rs-turnover" class="input">
-                <option value="5">非常に速い</option>
-                <option value="4">速い</option>
-                <option value="3" selected>普通</option>
-                <option value="2">遅い</option>
-                <option value="1">非常に遅い</option>
-              </select>
-            </div>
-            <div class="form-group flex-1">
-              <label>競合の多さ</label>
-              <select id="rs-competition" class="input">
-                <option value="1">非常に少ない</option>
-                <option value="2">少ない</option>
-                <option value="3" selected>普通</option>
-                <option value="4">多い</option>
-                <option value="5">非常に多い</option>
-              </select>
-            </div>
+          <!-- ソートボタン -->
+          <div class="filter-bar" style="margin-top:6px">
+            <button class="rs-sort-btn active" data-sort="score">おすすめ順</button>
+            <button class="rs-sort-btn" data-sort="profit">利益額順</button>
+            <button class="rs-sort-btn" data-sort="margin">利益率順</button>
+            <button class="rs-sort-btn" data-sort="roi">ROI順</button>
+            <button class="rs-sort-btn" data-sort="easy">初心者向け</button>
           </div>
 
-          <button id="rs-analyze-btn" class="btn btn-accent btn-full">商品を分析する</button>
+          <button id="rs-auto-research-btn" class="btn btn-accent btn-full" style="margin-top:10px">おすすめ商品をリサーチする</button>
         </section>
 
-        <!-- 分析結果 -->
-        <section id="rs-result" class="hidden">
-          <div id="rs-result-content"></div>
+        <!-- ローディング -->
+        <section id="rs-loading" class="hidden">
+          <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p class="loading-text" id="rs-loading-text">リサーチ中...</p>
+          </div>
+        </section>
+
+        <!-- リサーチ結果サマリー -->
+        <section id="rs-summary" class="hidden">
+          <div class="research-summary">
+            <div class="summary-stat">
+              <span class="summary-value" id="rs-summary-count">0</span>
+              <span class="summary-label">商品発見</span>
+            </div>
+            <div class="summary-stat">
+              <span class="summary-value" id="rs-summary-avg-profit">¥0</span>
+              <span class="summary-label">平均利益</span>
+            </div>
+            <div class="summary-stat">
+              <span class="summary-value" id="rs-summary-avg-margin">0%</span>
+              <span class="summary-label">平均利益率</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- リサーチ結果リスト -->
+        <section id="rs-results" class="hidden">
+          <div id="rs-results-list"></div>
+        </section>
+
+        <!-- 今月のトレンド商品 -->
+        <section class="card" id="rs-trending-section">
+          <h2 class="card-title">今月の注目商品</h2>
+          <p class="form-hint">季節トレンドに合った今仕入れるべき商品</p>
+          <div id="rs-trending-list"></div>
+        </section>
+
+        <!-- 今月のトレンドテーマ -->
+        <section class="card">
+          <h2 class="card-title">季節トレンド</h2>
+          <div id="rs-trends-current"></div>
+          <h3 class="card-subtitle" style="margin-top:12px;">来月の注目</h3>
+          <div id="rs-trends-upcoming"></div>
+        </section>
+
+        <!-- カテゴリー分析 -->
+        <section class="card">
+          <h2 class="card-title">カテゴリー分析</h2>
+          <div id="rs-category-ranking"></div>
         </section>
 
         <!-- 仕入れ上限価格の逆算 -->
@@ -144,37 +147,6 @@
           </div>
           <button id="rs-maxprice-btn" class="btn btn-primary btn-full">仕入れ上限を算出</button>
           <div id="rs-maxprice-result" class="hidden"></div>
-        </section>
-
-        <!-- 今月のトレンド -->
-        <section class="card">
-          <h2 class="card-title">今月のトレンド</h2>
-          <div id="rs-trends-current"></div>
-          <h3 class="card-subtitle" style="margin-top:12px;">来月の注目</h3>
-          <div id="rs-trends-upcoming"></div>
-        </section>
-
-        <!-- おすすめカテゴリーランキング -->
-        <section class="card">
-          <h2 class="card-title">おすすめカテゴリーTOP10</h2>
-          <div class="filter-bar">
-            <button class="cat-sort-btn active" data-sort="score">総合</button>
-            <button class="cat-sort-btn" data-sort="margin">利益率</button>
-            <button class="cat-sort-btn" data-sort="turnover">回転率</button>
-            <button class="cat-sort-btn" data-sort="easy">難易度低</button>
-          </div>
-          <div id="rs-category-ranking"></div>
-        </section>
-
-        <!-- リサーチ済み商品リスト -->
-        <section class="card">
-          <div class="page-header-row" style="margin-bottom:8px">
-            <h2 class="card-title" style="margin-bottom:0">リサーチ履歴</h2>
-            <button id="rs-clear-history" class="btn btn-outline btn-sm">クリア</button>
-          </div>
-          <div id="rs-history-list">
-            <p class="text-muted text-center">リサーチ履歴はまだありません</p>
-          </div>
         </section>
 
       </div>
